@@ -36,7 +36,7 @@ DONE = object()
 def get_next_question_id(order_id):
     last_completed_str = request.form.get('question_id')
     if not last_completed_str:
-        return ORDERS_BY_ID[order_id]['order'][0]
+        return (ORDERS_BY_ID[order_id]['order'][0], 0)
     else:
         # Ideally there would be error handling here.
         # But this is all a hack.
@@ -44,9 +44,9 @@ def get_next_question_id(order_id):
         question_ordering = ORDERS_BY_ID[order_id]['order']
         index = question_ordering.index(last_completed)
         if index == len(question_ordering) -1:
-            return DONE
+            return (DONE, None)
         else:
-            return question_ordering[index + 1]
+            return (question_ordering[index + 1], index + 1)
 
 
 def get_random_survey():
@@ -74,24 +74,32 @@ def do_survey():
     log_stuff()
 
     order_id = request.form.get('survey_order_id', get_random_survey())
-    next_question_id = get_next_question_id(order_id)
+    (next_question_id, next_question_index) = get_next_question_id(order_id)
 
     user_id = request.form.get('user_id') or random.randint(0,100000000000)
 
     if next_question_id == DONE:
         return render_template('all_done.html',
+                               num_done=len(QUESTIONS_BY_ID),
+                               total_questions=len(QUESTIONS_BY_ID),
+                               user_id=user_id,
                                code=ORDERS_BY_ID[order_id]['done_token'])
     else:
+        num_done = next_question_index
         question = QUESTIONS_BY_ID[next_question_id]
         if 'prompt' in question:
             return render_template('prompt_survey.html',
                                    time=time(),
+                                   num_done=num_done,
+                                   total_questions=len(QUESTIONS_BY_ID),
                                    user_id=user_id,
                                    question=question,
                                    order_id=order_id)
         else:
             return render_template('multi_survey.html',
                                    time=time(),
+                                   num_done=num_done,
+                                   total_questions=len(QUESTIONS_BY_ID),
                                    user_id=user_id,
                                    question=question,
                                    order_id=order_id)
