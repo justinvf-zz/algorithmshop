@@ -19,7 +19,7 @@
      "multi_sections": ["education", "warfare", "healthcare", "transportation", "immigration"]},
     {"id": 7,
      "question": "Give each plant food a score based on how sad you would be if it stopped existing? 1 = not sad. 10 = super sad.",
-     "multi_sections": ["tomato", "kiwi", "eggplant", "raddish", "aubergine", "lettuce"]},
+     "multi_sections": ["tomato", "kiwi", "eggplant", "radish", "aubergine", "lettuce"]},
     {"id": 8,
      "question": "what animal would you not want to leave alone with a sheep?",
      "prompt": "a mouse? a fox? ...? a moose?"},
