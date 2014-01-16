@@ -1,0 +1,13 @@
+<html>
+<body>
+<h2> {{ question }} </h2>
+
+<form name="my_hacky_form" method="post">
+
+<input type="text" value="{{ prompt }}" onclick="if (!window.clacked) {window.clacked=true; this.value='';}">
+
+<input type="submit" value="Answer!">
+<form>
+
+</body>
+</html>
