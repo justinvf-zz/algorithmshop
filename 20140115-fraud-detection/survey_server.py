@@ -98,4 +98,5 @@ def do_survey():
 
 
 if __name__ == '__main__':
-    APP.run(debug=True)
+    # Just for local. Use gunicorn for real stuff.
+    APP.run(host='localhost', port=5000, debug=True)
