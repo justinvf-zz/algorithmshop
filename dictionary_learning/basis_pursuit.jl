@@ -1,4 +1,3 @@
-
 # Atoms: one atom per column
 # Signal: signal, as a column vector
 
@@ -28,14 +27,14 @@ end
 
 # Works as above, but updates the residual at each step to
 # be perpendicular to the span of the dictionary items.
-function othogonal_matching_persuit(dictionary, signal, max_l0)
+function orthogonal_matching_persuit(dictionary, signal, sparsity)
     residual = copy(signal)
     num_atoms = size(dictionary)[2]
 
-    orthonormal_basis = zeros(length(signal), max_l0)
-    atom_indexes = zeros(max_l0)
+    orthonormal_basis = zeros(length(signal), sparsity)
+    atom_indexes = zeros(sparsity)
 
-    for i = 1:(max_l0)
+    for i = 1:sparsity
         dots = dictionary' * residual
         best_atom_index = indmax(dots)
         atom_indexes[i] = best_atom_index
@@ -60,9 +59,9 @@ function othogonal_matching_persuit(dictionary, signal, max_l0)
     for i = 1:length(atom_indexes)
         to_return[atom_indexes[i]] = final_coords[i]
     end
-    #println("FINAL DISTANCE : ", norm(atoms * to_return - signal))
     return to_return
 end
+
 
 function get_sparse_encoding(signals, dictionary, sparsity)
     num_atoms = size(dictionary)[2]
@@ -76,6 +75,7 @@ function get_sparse_encoding(signals, dictionary, sparsity)
     encodings
 end
 
+
 function k_svd(signals, num_iters, num_atoms, sparsity)
     (signal_dimension, num_signals) = size(signals)
 
@@ -84,15 +84,19 @@ function k_svd(signals, num_iters, num_atoms, sparsity)
     for i = 1:num_iters
         encodings =  get_sparse_encoding(signals, dictionary, sparsity)
         total_residual = signals - dictionary * encodings
+	println("Total residual: ", sum(abs(total_residual)))
 
         # Can randomize here to not always optimize the signals in the same order
         for k = 1:num_atoms
             signals_using_atom = find(encodings[k,:])
+	    if length(signals_using_atom) == 0
+	        continue
+	    end
             # We find the residual as if we didn't even have that atom
             restricted_residual = total_residual[:,signals_using_atom] + dictionary[:,k] * encodings[k, signals_using_atom]
             # Now we want to find a new atom that best captures those signals
             (U, s, V) = svd(restricted_residual)
-            dictionary[:,k] = U
+            dictionary[:,k] = U[:,1]
             encodings[k, signals_using_atom] = s[1] * (V')[1,:]
         end
         # (U, s, V) = svd(residual_for_k)
