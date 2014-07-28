@@ -12,7 +12,9 @@ midpoint = int(size(wav)[1]/2)
 # to see how well we can emulate the sound in the second half of the file
 
 function training_data(num_samples, sample_dimension)
-    max_index = int(size(wav)[1] / 2 - sample_dimension)
+    # Make sure to only get samples from the first half.
+    # Second half is what we will test on.
+    max_index = midpoint - sample_dimension
     starting_values = rand(1:max_index, num_samples)
     data = [wav[i:(i+sample_dimension-1)] for i in starting_values]
 

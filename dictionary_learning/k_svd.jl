@@ -84,6 +84,7 @@ end
 # iteratively refine a dictionary that can reproduce the signals
 # with a given degree of sparsity (l_0 norm of the encoding vectors)
 function k_svd(signals, num_iters, num_atoms, sparsity)
+    (signal_dimension, num_signals) = size(signals)
     dictionary = normalize_dictionary(rand(signal_dimension, num_atoms) .- .5)
     k_svd(signals, num_iters, num_atoms, sparsity, dictionary)
 end
@@ -91,8 +92,6 @@ end
 
 # Work with a dictionary that aready exists (possibly to further refine it).
 function k_svd(signals, num_iters, num_atoms, sparsity, dictionary)
-    (signal_dimension, num_signals) = size(signals)
-
     # We will randomly change the order that we visit atoms
     # in the ksvd step
     atom_indexes = [1:num_atoms]
