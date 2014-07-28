@@ -97,14 +97,15 @@ function k_svd(signals, num_iters, num_atoms, sparsity, dictionary)
     atom_indexes = [1:num_atoms]
     last_print = 0
     residual_norm = 0
+    start = time()
 
     for i = 1:num_iters
         encodings = get_sparse_encoding(signals, dictionary, sparsity)
         total_residual = signals - dictionary * encodings
         residual_norm = norm(total_residual)
         if time() - last_print > 10
-	    println("Total residual: ", residual_norm, " step: ", i)
             last_print = time()
+	    println("Total residual: $residual_norm step: $i time: $(round(last_print - start, 2))s")
         end
         # Can randomize here to not always optimize the signals in the same order
         shuffle!(atom_indexes)
