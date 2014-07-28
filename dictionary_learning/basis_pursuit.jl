@@ -1,7 +1,7 @@
 # Atoms: one atom per column
 # Signal: signal, as a column vector
-using Gadfly
 using DataFrames
+using Gadfly
 
 
 function normalize_dictionary(dictionary)
@@ -93,7 +93,7 @@ function k_svd(signals, num_iters, num_atoms, sparsity)
         encodings = get_sparse_encoding(signals, dictionary, sparsity)
         total_residual = signals - dictionary * encodings
         residual_norm = norm(total_residual)
-        if i % 10 == 0
+        if i % 2 == 0
 	    println("Total residual: ", residual_norm, " step: ", i)
         end
         # Can randomize here to not always optimize the signals in the same order
