@@ -1,8 +1,11 @@
 # Atoms: one atom per column
 # Signal: signal, as a column vector
+using Gadfly
+using DataFrames
 
-function normalize_dictionary(D)
-    D ./ sqrt(sum(D .^ 2, 1))
+
+function normalize_dictionary(dictionary)
+    dictionary ./ sqrt(sum(dictionary .^ 2, 1))
 end
 
 # Like findmax but works on the absolute value
@@ -11,15 +14,15 @@ function find_abs_max(itr)
     return (i, itr[i])
 end
 
-function matching_persuit(atoms, signal, max_l0)
+function matching_persuit(signal, dictionary, sparsity)
     residual = copy(signal)
-    to_return = zeros(size(atoms)[2])
+    to_return = zeros(size(dictionary)[2])
 
-    for i = 1:(max_l0)
-        dots = atoms' * residual
+    for i = 1:sparsity
+        dots = dictionary' * residual
         (best_atom_index, best_dot_product) = find_abs_max(dots)
         to_return[best_atom_index] += best_dot_product
-        residual = residual - (best_dot_product .* atoms[:,best_atom_index])
+        residual = residual - (best_dot_product .* dictionary[:,best_atom_index])
     end
 
     return to_return
@@ -27,7 +30,7 @@ end
 
 # Works as above, but updates the residual at each step to
 # be perpendicular to the span of the dictionary items.
-function orthogonal_matching_persuit(dictionary, signal, sparsity)
+function orthogonal_matching_persuit(signal, dictionary, sparsity)
     residual = copy(signal)
     num_atoms = size(dictionary)[2]
 
@@ -36,7 +39,7 @@ function orthogonal_matching_persuit(dictionary, signal, sparsity)
 
     for i = 1:sparsity
         dots = dictionary' * residual
-        best_atom_index = indmax(dots)
+        (best_atom_index, best_dot) = find_abs_max(dots)
         atom_indexes[i] = best_atom_index
 
         # We are going to add this new best atom to our growing subspace.
@@ -70,7 +73,7 @@ function get_sparse_encoding(signals, dictionary, sparsity)
     encodings = zeros((num_atoms, num_signals))
 
     for i = 1:num_signals
-        encodings[:,i] = orthogonal_matching_persuit(dictionary, signals[:,i], sparsity)
+        encodings[:,i] = orthogonal_matching_persuit(signals[:,i], dictionary, sparsity)
     end
     encodings
 end
@@ -79,15 +82,23 @@ end
 function k_svd(signals, num_iters, num_atoms, sparsity)
     (signal_dimension, num_signals) = size(signals)
 
-    dictionary = normalize_dictionary(rand(signal_dimension, num_atoms))
+    dictionary = normalize_dictionary(rand(signal_dimension, num_atoms) .- .5)
+
+    atom_indexes = [1:num_atoms]
+
+    best_dict = copy(dictionary)
+    best_residual_norm = 100000
 
     for i = 1:num_iters
-        encodings =  get_sparse_encoding(signals, dictionary, sparsity)
+        encodings = get_sparse_encoding(signals, dictionary, sparsity)
         total_residual = signals - dictionary * encodings
-	println("Total residual: ", sum(abs(total_residual)))
-
+        residual_norm = norm(total_residual)
+        if i % 10 == 0
+	    println("Total residual: ", residual_norm, " step: ", i)
+        end
         # Can randomize here to not always optimize the signals in the same order
-        for k = 1:num_atoms
+        shuffle!(atom_indexes)
+        for k = atom_indexes
             signals_using_atom = find(encodings[k,:])
 	    if length(signals_using_atom) == 0
 	        continue
@@ -98,10 +109,35 @@ function k_svd(signals, num_iters, num_atoms, sparsity)
             (U, s, V) = svd(restricted_residual)
             dictionary[:,k] = U[:,1]
             encodings[k, signals_using_atom] = s[1] * (V')[1,:]
+            total_residual[:,signals_using_atom] = restricted_residual - dictionary[:,k] * encodings[k, signals_using_atom]
         end
-        # (U, s, V) = svd(residual_for_k)
-        # new_k = U[:,1]
-        # best_projection_onto_new_k = U[:,1] * s[1] * (V')[1,:]
     end
     dictionary
 end
+
+function generate_data(num_signals, signal_dimension, num_sin_waves, noise_level)
+    x = linspace(0, 2*pi, signal_dimension)
+
+    basis_waves = [sin(rand() .+ x .* (2*num_signals*rand())) for i in 1:num_sin_waves]
+    basis_waves = hcat(basis_waves...)
+
+    selector_matrix = rand(num_sin_waves, num_signals)
+    
+    return basis_waves * selector_matrix + (noise_level .* rand(signal_dimension, num_signals))
+end
+
+function draw_info(signal, dictionary, sparsity)
+    x = linspace(0,1,length(signal))
+    encoding = orthogonal_matching_persuit(signal, dictionary, sparsity)
+    basis_frames = [DataFrame(x=x, y=D[:,i], label="basis_$(i)") for i in find(encoding)]
+    encoded_vector = DataFrame(x=x, y=D*encoding, label="approximation")
+    raw_signal = DataFrame(x=x, y=signal, label="raw_signal")
+    all_frames = vcat(encoded_vector, raw_signal, basis_frames...)
+    plot(all_frames, x="x", y="y", color="label", Geom.line)
+end
+
+# DEMO #
+# SPARSITY = 5
+# S = generate_data(300, 100, SPARSITY, .2);
+# D = k_svd(S, 200, 80, SPARSITY);
+# draw_info(S[:,41], D, SPARSITY)
