@@ -60,7 +60,7 @@ function orthogonal_matching_persuit(signal, dictionary, sparsity)
     final_coords = final_atoms \ signal
     # create the vector with the specified sparsity
     to_return = zeros(num_atoms)
-    for (atom_index, atom_coord) in zip(atom_indexes, final_coords):
+    for (atom_index, atom_coord) in zip(atom_indexes, final_coords)
         to_return[atom_index] = atom_coord
     end
     to_return

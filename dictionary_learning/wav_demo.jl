@@ -2,7 +2,7 @@ using WAV
 
 FILENAME = "british_speaking.wav"
 
-require("basis_pursuit")
+require("k_svd")
 
 wav, FS = wavread(FILENAME)
 
