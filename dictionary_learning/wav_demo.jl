@@ -32,8 +32,6 @@ function encode_half_2(D, sparsity, seconds=8)
         output[start_offset+1:end_offset] = sparsely_encoded
     end
     output /= maximum(abs(output[:,1]))
-    println(size(output))
-    println(size(wav[midpoint:end]))
     wavwrite(wav[midpoint:end], "original_second_half.wav", Fs=FS)
     wavwrite(output, "encoded_second_half.wav", Fs=FS)
 end
@@ -42,5 +40,5 @@ end
 # S = training_data(1000, 200);
 # SPARSITY=40
 # Takes a while:
-# D = float32(k_svd(S, 30, 500, SPARSITY);)
+# D = k_svd(S, 30, 500, SPARSITY);
 # encode_half_2(D, SPARSITY)
